@@ -101,4 +101,28 @@ class BookControllerIT(
         verify { bookUseCase.reserveBook("Hamlet") }
     }
 
+    test("reserve should fail if book already reserved") {
+        every { bookUseCase.reserveBook("AlreadyReserved") } throws IllegalStateException("Book already reserved")
+
+        mockMvc.post("/books/AlreadyReserved/reserve")
+            .andExpect { status { is5xxServerError() } }
+
+        verify { bookUseCase.reserveBook("AlreadyReserved") }
+    }
+
+    test("get all books should include reservation status") {
+        every { bookUseCase.getAllBooks() } returns listOf(
+            Book("A", "Author", isReserved = true),
+            Book("B", "Author", isReserved = false)
+        )
+
+        mockMvc.get("/books")
+            .andExpect {
+                status { isOk() }
+                content { contentType(APPLICATION_JSON) }
+                jsonPath("$[0].isReserved") { value(true) }
+                jsonPath("$[1].isReserved") { value(false) }
+            }
+    }
+
 })
