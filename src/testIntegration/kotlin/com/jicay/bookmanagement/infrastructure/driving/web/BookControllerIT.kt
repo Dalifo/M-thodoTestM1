@@ -91,4 +91,14 @@ class BookControllerIT(
 
         verify(exactly = 0) { bookUseCase.addBook(any()) }
     }
+
+    test("POST /books/{title}/reserve ok") {
+        justRun { bookUseCase.reserveBook("Hamlet") }
+
+        mockMvc.post("/books/Hamlet/reserve")
+            .andExpect { status { isNoContent() } }
+
+        verify { bookUseCase.reserveBook("Hamlet") }
+    }
+
 })

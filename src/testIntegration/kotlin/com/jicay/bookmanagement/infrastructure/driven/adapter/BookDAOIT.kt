@@ -4,6 +4,7 @@ import com.jicay.bookmanagement.domain.model.Book
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
@@ -70,6 +71,18 @@ class BookDAOIT(
                 this["title"].shouldBe("Les misérables")
                 this["author"].shouldBe("Victor Hugo")
             }
+        }
+
+        test("reserve book in db") {
+            performQuery("INSERT INTO book (title, author, is_reserved) VALUES ('HP', 'Rowling', FALSE);")
+            bookDAO.reserveBook("HP")
+            val rows = performQuery("SELECT is_reserved FROM book WHERE title = 'HP'")
+            rows.first()["is_reserved"] shouldBe true
+        }
+
+        test("reserve already reserved -> error") {
+            performQuery("INSERT INTO book (title, author, is_reserved) VALUES ('HP', 'Rowling', TRUE);")
+            shouldThrow<IllegalStateException> { bookDAO.reserveBook("HP") }
         }
 
         afterSpec {

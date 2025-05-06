@@ -15,4 +15,13 @@ class BookUseCase(
     fun addBook(book: Book) {
         bookPort.createBook(book)
     }
+
+    fun reserveBook(name: String) {
+        val target = bookPort.getAllBooks().find { it.name == name }
+            ?: error("Book $name not found")
+
+        if (target.isReserved) error("Book already reserved")
+
+        bookPort.reserveBook(name)
+    }
 }

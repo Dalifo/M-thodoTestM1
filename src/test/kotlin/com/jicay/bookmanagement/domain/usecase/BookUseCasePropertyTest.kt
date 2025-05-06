@@ -13,15 +13,23 @@ import io.kotest.property.checkAll
 class InMemoryBookPort : BookPort {
     private val books = mutableListOf<Book>()
 
-    override fun getAllBooks(): List<Book> = books
+    override fun getAllBooks(): List<Book> = books.toList()
 
     override fun createBook(book: Book) {
         books.add(book)
     }
 
-    fun clear() {
-        books.clear()
+    override fun reserveBook(name: String) {
+        val idx = books.indexOfFirst { it.name == name }
+        require(idx != -1) { "Book $name not found" }
+
+        val current = books[idx]
+        check(!current.isReserved) { "Book already reserved" }
+
+        books[idx] = current.copy(isReserved = true)
     }
+
+    fun clear() = books.clear()
 }
 
 class BookUseCasePropertyTest : FunSpec({
@@ -31,20 +39,18 @@ class BookUseCasePropertyTest : FunSpec({
 
     test("should return all elements in the alphabetical order") {
         checkAll(Arb.int(1..100)) { nbItems ->
+
             bookPort.clear()
-
             val arb = Arb.stringPattern("""[a-z]{1,10}""")
-
             val titles = mutableListOf<String>()
 
-            for (i in 1..nbItems) {
+            repeat(nbItems) {
                 val title = arb.next()
-                titles.add(title)
-                bookUseCase.addBook(Book(title, "Victor Hugo"))
+                titles += title
+                bookUseCase.addBook(Book(title, "Victor Hugo"))   // isReserved = false (par défaut)
             }
 
             val res = bookUseCase.getAllBooks()
-
             res.map { it.name } shouldContainExactly titles.sorted()
         }
     }

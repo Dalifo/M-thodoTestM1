@@ -2,6 +2,7 @@ package com.jicay.bookmanagement.domain.usecase
 
 import com.jicay.bookmanagement.domain.model.Book
 import com.jicay.bookmanagement.domain.port.BookPort
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.mockk.every
@@ -38,4 +39,19 @@ class BookUseCaseTest : FunSpec({
         verify(exactly = 1) { bookPort.createBook(book) }
     }
 
+    test("reserve ok") {
+        val port = mockk<BookPort> {
+            every { getAllBooks() } returns listOf(Book("Hamlet", "Shakespeare"))
+            justRun { reserveBook("Hamlet") }
+        }
+        BookUseCase(port).reserveBook("Hamlet")
+        verify { port.reserveBook("Hamlet") }
+    }
+
+    test("reserve twice -> error") {
+        val port = mockk<BookPort> {
+            every { getAllBooks() } returns listOf(Book("Hamlet", "S.", true))
+        }
+        shouldThrow<IllegalStateException> { BookUseCase(port).reserveBook("Hamlet") }
+    }
 })
